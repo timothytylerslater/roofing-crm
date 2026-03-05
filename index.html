@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roofing CRM Pro</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f7; color: #1d1d1f; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        h1 { font-size: 28px; font-weight: 600; }
+        .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { background: #007aff; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 500; transition: background 0.2s; }
+        .btn:hover { background: #0051d5; }
+        .btn-secondary { background: #8e8e93; }
+        .btn-secondary:hover { background: #636366; }
+        .btn-success { background: #34c759; }
+        .btn-success:hover { background: #248a3d; }
+        .tabs { background: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; gap: 10px; }
+        .tab { padding: 10px 20px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s; }
+        .tab:hover { background: #f2f2f7; }
+        .tab.active { background: #007aff; color: white; }
+        .search-filter { background: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .search-box { flex: 1; min-width: 200px; padding: 10px 16px; border: 1px solid #d1d1d6; border-radius: 8px; font-size: 14px; }
+        .filter-btn { padding: 8px 16px; border: 1px solid #d1d1d6; background: white; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .filter-btn:hover { border-color: #007aff; color: #007aff; }
+        .filter-btn.active { background: #007aff; color: white; border-color: #007aff; }
+        .content-view { display: none; }
+        .content-view.active { display: block; }
+        .data-table { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #f9f9f9; }
+        th { padding: 15px; text-align: left; font-weight: 600; font-size: 14px; color: #6e6e73; border-bottom: 2px solid #e5e5e7; }
+        td { padding: 15px; border-bottom: 1px solid #e5e5e7; }
+        tr:hover { background: #f9f9f9; cursor: pointer; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .status-lead { background: #f2f2f7; color: #8e8e93; }
+        .status-estimate { background: #e3f2ff; color: #007aff; }
+        .status-contract { background: #fff3e0; color: #ff9500; }
+        .status-deposit { background: #fff9e6; color: #ffcc00; }
+        .status-scheduled { background: #f0e6ff; color: #af52de; }
+        .status-inprogress { background: #e6f4ff; color: #32ade6; }
+        .status-completed { background: #e6f7ed; color: #34c759; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; padding: 20px; overflow-y: auto; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 12px; padding: 30px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { font-size: 24px; }
+        .close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: #8e8e93; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #d1d1d6; border-radius: 8px; font-size: 16px; font-family: inherit; }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .form-actions { display: flex; gap: 10px; margin-top: 30px; }
+        .form-actions button { flex: 1; }
+        .btn-danger { background: #ff3b30; }
+        .btn-danger:hover { background: #d70015; }
+        .customer-detail { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .customer-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e5e5e7; }
+        .customer-info h2 { font-size: 28px; margin-bottom: 10px; }
+        .customer-contact { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .contact-item { display: flex; align-items: center; gap: 10px; }
+        .section-title { font-size: 20px; font-weight: 600; margin-bottom: 15px; margin-top: 30px; }
+        .job-list { display: grid; gap: 15px; }
+        .job-item { background: #f9f9f9; padding: 20px; border-radius: 8px; cursor: pointer; transition: all 0.2s; border-left: 4px solid #007aff; }
+        .job-item:hover { transform: translateX(5px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .job-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #8e8e93; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
+        .stat-value { font-size: 32px; font-weight: 700; color: #007aff; margin-bottom: 5px; }
+        .stat-label { font-size: 14px; color: #6e6e73; }
+        .notes-history { margin-top: 20px; }
+        .note-item { background: #f9f9f9; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
+        .note-date { color: #8e8e93; font-size: 12px; margin-bottom: 4px; }
+        input[type="file"] { display: none; }
+        @media (max-width: 768px) {
+            h1 { font-size: 24px; }
+            .modal-content { padding: 20px; }
+            .form-grid { grid-template-columns: 1fr; }
+            table { font-size: 14px; }
+            th, td { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏠 Roofing CRM Pro</h1>
+            <div class="header-actions">
+                <button class="btn" onclick="openNewCustomerModal()">+ New Customer</button>
+                <button class="btn" onclick="openNewJobModal()">+ New Job</button>
+                <button class="btn btn-success" onclick="exportContacts()">📧 Export Contacts</button>
+                <button class="btn btn-secondary" onclick="importData()">📥 Import</button>
+                <button class="btn btn-secondary" onclick="exportBackup()">💾 Export</button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('customers')">👥 Customers</button>
+            <button class="tab" onclick="switchTab('jobs')">📋 Jobs</button>
+            <button class="tab" onclick="switchTab('calendar')">📅 Calendar</button>
+        </div>
+
+        <div class="stats" id="stats"></div>
+
+        <div class="content-view active" id="customersView">
+            <div class="search-filter">
+                <input type="text" class="search-box" id="customerSearch" placeholder="Search customers..." onkeyup="filterCustomers()">
+            </div>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Customer Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Address</th>
+                            <th>Jobs</th>
+                            <th>Total Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="content-view" id="jobsView">
+            <div class="search-filter">
+                <input type="text" class="search-box" id="jobSearch" placeholder="Search jobs..." onkeyup="filterJobs()">
+                <button class="filter-btn active" data-status="all" onclick="setJobFilter('all')">All</button>
+                <button class="filter-btn" data-status="lead" onclick="setJobFilter('lead')">Leads</button>
+                <button class="filter-btn" data-status="estimate" onclick="setJobFilter('estimate')">Estimates</button>
+                <button class="filter-btn" data-status="contract" onclick="setJobFilter('contract')">Contracts</button>
+                <button class="filter-btn" data-status="deposit" onclick="setJobFilter('deposit')">Deposits</button>
+                <button class="filter-btn" data-status="scheduled" onclick="setJobFilter('scheduled')">Scheduled</button>
+                <button class="filter-btn" data-status="inprogress" onclick="setJobFilter('inprogress')">In Progress</button>
+                <button class="filter-btn" data-status="completed" onclick="setJobFilter('completed')">Completed</button>
+            </div>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Job Type</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                            <th>Scheduled</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="content-view" id="calendarView">
+            <div class="customer-detail" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <button class="btn btn-secondary" onclick="changeMonth(-1)">← Previous</button>
+                    <h2 id="calendarMonth" style="margin: 0;"></h2>
+                    <button class="btn btn-secondary" onclick="changeMonth(1)">Next →</button>
+                </div>
+                <div id="calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px;"></div>
+            </div>
+        </div>
+
+        <div class="content-view" id="customerDetailView">
+            <button class="btn btn-secondary" onclick="backToCustomers()" style="margin-bottom: 20px;">← Back to Customers</button>
+            <div class="customer-detail" id="customerDetailContent"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="customerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="customerModalTitle">New Customer</h2>
+                <button class="close-btn" onclick="closeCustomerModal()">&times;</button>
+            </div>
+            <form id="customerForm" onsubmit="saveCustomer(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Customer Name *</label>
+                        <input type="text" id="custName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" id="custPhone">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="custEmail">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Address</label>
+                        <input type="text" id="custAddress">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Notes</label>
+                        <textarea id="custNotes"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCustomerModal()">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="deleteCustomerBtn" onclick="deleteCustomer()" style="display:none;">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="jobModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="jobModalTitle">New Job</h2>
+                <button class="close-btn" onclick="closeJobModal()">&times;</button>
+            </div>
+            <form id="jobForm" onsubmit="saveJob(event)">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Customer *</label>
+                        <select id="jobCustomerId" required>
+                            <option value="">Select Customer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Job Type</label>
+                        <select id="jobType">
+                            <option>Repair</option>
+                            <option>Replacement</option>
+                            <option>New Installation</option>
+                            <option>Inspection</option>
+                            <option>Emergency</option>
+                            <option>Snow Removal</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select id="jobStatus" required>
+                            <option value="lead">Lead</option>
+                            <option value="estimate">Estimate Sent</option>
+                            <option value="contract">Contract Sent</option>
+                            <option value="deposit">Deposit Received</option>
+                            <option value="scheduled">Scheduled</option>
+                            <option value="inprogress">In Progress</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Job Amount ($)</label>
+                        <input type="number" id="jobAmount" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Scheduled Date</label>
+                        <input type="date" id="jobScheduledDate">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Description/Notes</label>
+                        <textarea id="jobDescription"></textarea>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Add Note</label>
+                        <textarea id="jobNewNote" placeholder="Add a new note (timestamped)..."></textarea>
+                    </div>
+                </div>
+                <div id="jobNotesHistory" class="notes-history" style="display:none;">
+                    <h4>Previous Notes</h4>
+                    <div id="jobNotesList"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeJobModal()">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="deleteJobBtn" onclick="deleteJob()" style="display:none;">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <input type="file" id="importFile" accept=".json" onchange="handleImport(event)">
+
+    <script>
+        let data = { customers: [], jobs: [], lastUpdated: null };
+        let currentTab = 'customers';
+        let currentJobFilter = 'all';
+        let editingCustomerId = null;
+        let editingJobId = null;
+        let viewingCustomerId = null;
+        let calendarDate = new Date();
+
+        function init() {
+            loadData();
+            renderStats();
+            renderCustomers();
+            renderJobs();
+        }
+
+        function loadData() {
+            const stored = localStorage.getItem('roofingCRMData');
+            if (stored) {
+                data = JSON.parse(stored);
+            }
+        }
+
+        function saveData() {
+            data.lastUpdated = new Date().toISOString();
+            localStorage.setItem('roofingCRMData', JSON.stringify(data));
+        }
+
+        function importData() {
+            document.getElementById('importFile').click();
+        }
+
+        function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    data = imported;
+                    saveData();
+                    init();
+                    alert('✅ Data imported successfully!');
+                } catch (err) {
+                    alert('❌ Error importing data: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.content-view').forEach(v => v.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            
+            if (tab === 'customers') {
+                document.getElementById('customersView').classList.add('active');
+                renderCustomers();
+            } else if (tab === 'jobs') {
+                document.getElementById('jobsView').classList.add('active');
+                renderJobs();
+            } else if (tab === 'calendar') {
+                document.getElementById('calendarView').classList.add('active');
+                renderCalendar();
+            }
+            
+            renderStats();
+        }
+
+        function renderStats() {
+            const totalCustomers = data.customers.length;
+            const totalJobs = data.jobs.length;
+            const activeJobs = data.jobs.filter(j => !['completed', 'lead'].includes(j.status)).length;
+            const revenue = data.jobs.filter(j => j.status === 'completed' && j.amount).reduce((sum, j) => sum + parseFloat(j.amount), 0);
+
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card"><div class="stat-value">${totalCustomers}</div><div class="stat-label">Customers</div></div>
+                <div class="stat-card"><div class="stat-value">${totalJobs}</div><div class="stat-label">Total Jobs</div></div>
+                <div class="stat-card"><div class="stat-value">${activeJobs}</div><div class="stat-label">Active Jobs</div></div>
+                <div class="stat-card"><div class="stat-value">$${revenue.toLocaleString()}</div><div class="stat-label">Revenue</div></div>
+            `;
+        }
+
+        function renderCustomers() {
+            const searchTerm = document.getElementById('customerSearch')?.value.toLowerCase() || '';
+            const filtered = data.customers.filter(c => 
+                c.name.toLowerCase().includes(searchTerm) ||
+                (c.email && c.email.toLowerCase().includes(searchTerm)) ||
+                (c.phone && c.phone.includes(searchTerm))
+            );
+
+            const tbody = document.getElementById('customersTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><h3>No customers found</h3><p>Add your first customer!</p></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(customer => {
+                const customerJobs = data.jobs.filter(j => j.customerId === customer.id);
+                const totalValue = customerJobs.reduce((sum, j) => sum + (parseFloat(j.amount) || 0), 0);
+                
+                return `
+                    <tr onclick="viewCustomer('${customer.id}')">
+                        <td><strong>${customer.name}</strong></td>
+                        <td>${customer.phone || '-'}</td>
+                        <td>${customer.email || '-'}</td>
+                        <td>${customer.address || '-'}</td>
+                        <td>${customerJobs.length}</td>
+                        <td>$${totalValue.toLocaleString()}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterCustomers() { renderCustomers(); }
+
+        function openNewCustomerModal() {
+            editingCustomerId = null;
+            document.getElementById('customerModalTitle').textContent = 'New Customer';
+            document.getElementById('customerForm').reset();
+            document.getElementById('deleteCustomerBtn').style.display = 'none';
+            document.getElementById('customerModal').classList.add('active');
+        }
+
+        function closeCustomerModal() {
+            document.getElementById('customerModal').classList.remove('active');
+        }
+
+        function saveCustomer(event) {
+            event.preventDefault();
+            const customerData = {
+                name: document.getElementById('custName').value,
+                phone: document.getElementById('custPhone').value,
+                email: document.getElementById('custEmail').value,
+                address: document.getElementById('custAddress').value,
+                notes: document.getElementById('custNotes').value
+            };
+
+            if (editingCustomerId) {
+                const idx = data.customers.findIndex(c => c.id === editingCustomerId);
+                data.customers[idx] = { ...data.customers[idx], ...customerData, updatedAt: new Date().toISOString() };
+            } else {
+                data.customers.push({ ...customerData, id: Date.now().toString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+            }
+
+            saveData();
+            renderCustomers();
+            renderStats();
+            closeCustomerModal();
+        }
+
+        function deleteCustomer() {
+            if (!editingCustomerId || !confirm('Delete this customer and all their jobs?')) return;
+            data.customers = data.customers.filter(c => c.id !== editingCustomerId);
+            data.jobs = data.jobs.filter(j => j.customerId !== editingCustomerId);
+            saveData();
+            renderCustomers();
+            renderJobs();
+            renderStats();
+            closeCustomerModal();
+        }
+
+        function viewCustomer(customerId) {
+            viewingCustomerId = customerId;
+            const customer = data.customers.find(c => c.id === customerId);
+            if (!customer) return;
+
+            const customerJobs = data.jobs.filter(j => j.customerId === customerId);
+            
+            document.getElementById('customerDetailContent').innerHTML = `
+                <div class="customer-header">
+                    <div class="customer-info">
+                        <h2>${customer.name}</h2>
+                        <div class="customer-contact">
+                            ${customer.phone ? `<div class="contact-item">📞 ${customer.phone}</div>` : ''}
+                            ${customer.email ? `<div class="contact-item">📧 ${customer.email}</div>` : ''}
+                            ${customer.address ? `<div class="contact-item">📍 ${customer.address}</div>` : ''}
+                        </div>
+                        ${customer.notes ? `<p style="margin-top: 15px; color: #6e6e73;">${customer.notes}</p>` : ''}
+                    </div>
+                    <div><button class="btn btn-secondary" onclick="editCustomer('${customer.id}')">Edit Customer</button></div>
+                </div>
+                <div class="section-title">Jobs (${customerJobs.length})</div>
+                <button class="btn" onclick="openNewJobForCustomer('${customer.id}')" style="margin-bottom: 15px;">+ Add Job</button>
+                <div class="job-list">
+                    ${customerJobs.length === 0 ? '<p style="color: #8e8e93;">No jobs yet.</p>' :
+                        customerJobs.map(job => `
+                            <div class="job-item" onclick="editJob('${job.id}')">
+                                <div class="job-item-header">
+                                    <strong>${job.jobType || 'Job'}</strong>
+                                    <span class="status-badge status-${job.status}">${getStatusLabel(job.status)}</span>
+                                </div>
+                                <div style="font-size: 14px; color: #6e6e73;">${job.description || 'No description'}</div>
+                                ${job.amount ? `<div style="font-size: 18px; font-weight: 600; color: #34c759; margin-top: 10px;">$${parseFloat(job.amount).toLocaleString()}</div>` : ''}
+                                ${job.scheduledDate ? `<div style="font-size: 14px; color: #6e6e73; margin-top: 5px;">📅 ${new Date(job.scheduledDate).toLocaleDateString()}</div>` : ''}
+                            </div>
+                        `).join('')
+                    }
+                </div>
+            `;
+
+            document.getElementById('customersView').classList.remove('active');
+            document.getElementById('customerDetailView').classList.add('active');
+        }
+
+        function editCustomer(customerId) {
+            const customer = data.customers.find(c => c.id === customerId);
+            if (!customer) return;
+
+            editingCustomerId = customerId;
+            document.getElementById('customerModalTitle').textContent = 'Edit Customer';
+            document.getElementById('custName').value = customer.name;
+            document.getElementById('custPhone').value = customer.phone || '';
+            document.getElementById('custEmail').value = customer.email || '';
+            document.getElementById('custAddress').value = customer.address || '';
+            document.getElementById('custNotes').value = customer.notes || '';
+            document.getElementById('deleteCustomerBtn').style.display = 'block';
+            document.getElementById('customerModal').classList.add('active');
+        }
+
+        function backToCustomers() {
+            document.getElementById('customerDetailView').classList.remove('active');
+            document.getElementById('customersView').classList.add('active');
+            viewingCustomerId = null;
+        }
+
+        function renderJobs() {
+            const searchTerm = document.getElementById('jobSearch')?.value.toLowerCase() || '';
+            let filtered = data.jobs.filter(job => {
+                const customer = data.customers.find(c => c.id === job.customerId);
+                const customerName = customer ? customer.name.toLowerCase() : '';
+                const matchesSearch = customerName.includes(searchTerm) ||
+                                    (job.jobType && job.jobType.toLowerCase().includes(searchTerm)) ||
+                                    (job.description && job.description.toLowerCase().includes(searchTerm));
+                const matchesFilter = currentJobFilter === 'all' || job.status === currentJobFilter;
+                return matchesSearch && matchesFilter;
+            });
+
+            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            const tbody = document.getElementById('jobsTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><h3>No jobs found</h3></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(job => {
+                const customer = data.customers.find(c => c.id === job.customerId);
+                return `
+                    <tr onclick="editJob('${job.id}')">
+                        <td><strong>${customer ? customer.name : 'Unknown'}</strong></td>
+                        <td>${job.jobType || '-'}</td>
+                        <td><span class="status-badge status-${job.status}">${getStatusLabel(job.status)}</span></td>
+                        <td>${job.amount ? '$' + parseFloat(job.amount).toLocaleString() : '-'}</td>
+                        <td>${job.scheduledDate ? new Date(job.scheduledDate).toLocaleDateString() : '-'}</td>
+                        <td>${new Date(job.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterJobs() { renderJobs(); }
+
+        function setJobFilter(status) {
+            currentJobFilter = status;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.status === status);
+            });
+            renderJobs();
+        }
+
+        function openNewJobModal() {
+            editingJobId = null;
+            document.getElementById('jobModalTitle').textContent = 'New Job';
+            document.getElementById('jobForm').reset();
+            document.getElementById('deleteJobBtn').style.display = 'none';
+            document.getElementById('jobNotesHistory').style.display = 'none';
+            populateCustomerSelect();
+            document.getElementById('jobModal').classList.add('active');
+        }
+
+        function openNewJobForCustomer(customerId) {
+            openNewJobModal();
+            document.getElementById('jobCustomerId').value = customerId;
+        }
+
+        function closeJobModal() {
+            document.getElementById('jobModal').classList.remove('active');
+        }
+
+        function populateCustomerSelect() {
+            const select = document.getElementById('jobCustomerId');
+            select.innerHTML = '<option value="">Select Customer</option>' +
+                data.customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        function saveJob(event) {
+            event.preventDefault();
+            const jobData = {
+                customerId: document.getElementById('jobCustomerId').value,
+                jobType: document.getElementById('jobType').value,
+                status: document.getElementById('jobStatus').value,
+                amount: document.getElementById('jobAmount').value,
+                scheduledDate: document.getElementById('jobScheduledDate').value,
+                description: document.getElementById('jobDescription').value
+            };
+
+            const newNote = document.getElementById('jobNewNote').value.trim();
+
+            if (editingJobId) {
+                const idx = data.jobs.findIndex(j => j.id === editingJobId);
+                const existing = data.jobs[idx];
+                data.jobs[idx] = { ...existing, ...jobData, updatedAt: new Date().toISOString() };
+
+                if (newNote) {
+                    if (!data.jobs[idx].notes) data.jobs[idx].notes = [];
+                    data.jobs[idx].notes.push({ date: new Date().toISOString(), text: newNote });
+                }
+            } else {
+                data.jobs.push({
+                    ...jobData,
+                    id: Date.now().toString(),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    notes: newNote ? [{ date: new Date().toISOString(), text: newNote }] : []
+                });
+            }
+
+            saveData();
+            renderJobs();
+            renderStats();
+            closeJobModal();
+            
+            if (viewingCustomerId) viewCustomer(viewingCustomerId);
+        }
+
+        function editJob(jobId) {
+            const job = data.jobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            editingJobId = jobId;
+            document.getElementById('jobModalTitle').textContent = 'Edit Job';
+            populateCustomerSelect();
+            document.getElementById('jobCustomerId').value = job.customerId;
+            document.getElementById('jobType').value = job.jobType || '';
+            document.getElementById('jobStatus').value = job.status;
+            document.getElementById('jobAmount').value = job.amount || '';
+            document.getElementById('jobScheduledDate').value = job.scheduledDate || '';
+            document.getElementById('jobDescription').value = job.description || '';
+            document.getElementById('jobNewNote').value = '';
+
+            if (job.notes && job.notes.length > 0) {
+                document.getElementById('jobNotesHistory').style.display = 'block';
+                document.getElementById('jobNotesList').innerHTML = job.notes.map(note => `
+                    <div class="note-item">
+                        <div class="note-date">${new Date(note.date).toLocaleString()}</div>
+                        <div>${note.text}</div>
+                    </div>
+                `).join('');
+            } else {
+                document.getElementById('jobNotesHistory').style.display = 'none';
+            }
+
+            document.getElementById('deleteJobBtn').style.display = 'block';
+            document.getElementById('jobModal').classList.add('active');
+        }
+
+        function deleteJob() {
+            if (!editingJobId || !confirm('Delete this job?')) return;
+            data.jobs = data.jobs.filter(j => j.id !== editingJobId);
+            saveData();
+            renderJobs();
+            renderStats();
+            closeJobModal();
+            if (viewingCustomerId) viewCustomer(viewingCustomerId);
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                lead: 'Lead', estimate: 'Estimate', contract: 'Contract',
+                deposit: 'Deposit', scheduled: 'Scheduled',
+                inprogress: 'In Progress', completed: 'Completed'
+            };
+            return labels[status] || status;
+        }
+
+        function renderCalendar() {
+            const year = calendarDate.getFullYear();
+            const month = calendarDate.getMonth();
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            document.getElementById('calendarMonth').textContent = `${monthNames[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startDayOfWeek = firstDay.getDay();
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
+            
+            const grid = document.getElementById('calendarGrid');
+            let html = '';
+            
+            const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayHeaders.forEach(day => {
+                html += `<div style="font-weight: 600; text-align: center; padding: 10px;">${day}</div>`;
+            });
+            
+            for (let i = startDayOfWeek - 1; i >= 0; i--) {
+                html += `<div style="min-height: 100px; padding: 8px; border: 1px solid #d1d1d6; border-radius: 8px; opacity: 0.3;"><div style="font-weight: 600;">${prevMonthLastDay - i}</div></div>`;
+            }
+            
+            const today = new Date();
+            const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dateStr = date.toISOString().split('T')[0];
+                const isToday = isCurrentMonth && day === today.getDate();
+                const dayJobs = data.jobs.filter(j => j.scheduledDate === dateStr);
+                
+                html += `<div style="min-height: 100px; padding: 8px; border: 1px solid ${isToday ? '#007aff' : '#d1d1d6'}; border-radius: 8px; background: ${isToday ? '#e3f2ff' : '#fafafa'};">
+                    <div style="font-weight: 600; margin-bottom: 5px;">${day}</div>`;
+                
+                dayJobs.forEach(job => {
+                    const customer = data.customers.find(c => c.id === job.customerId);
+                    html += `<div onclick="editJob('${job.id}')" style="background: white; padding: 4px 6px; border-radius: 4px; font-size: 11px; margin-bottom: 4px; cursor: pointer; border-left: 3px solid #007aff; overflow: hidden;">${customer ? customer.name : 'Unknown'}</div>`;
+                });
+                
+                html += `</div>`;
+            }
+            
+            const totalCells = startDayOfWeek + daysInMonth;
+            const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+            for (let day = 1; day <= remainingCells; day++) {
+                html += `<div style="min-height: 100px; padding: 8px; border: 1px solid #d1d1d6; border-radius: 8px; opacity: 0.3;"><div style="font-weight: 600;">${day}</div></div>`;
+            }
+            
+            grid.innerHTML = html;
+        }
+
+        function changeMonth(delta) {
+            calendarDate.setMonth(calendarDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function exportContacts() {
+            const contacts = data.customers.map(c => ({
+                name: c.name, email: c.email, phone: c.phone, address: c.address
+            })).filter(c => c.email || c.phone);
+
+            const csv = 'Name,Email,Phone,Address\n' + 
+                contacts.map(c => `"${c.name}","${c.email || ''}","${c.phone || ''}","${c.address || ''}"`).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `customer-contacts-${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        function exportBackup() {
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `roofing-crm-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+
+        document.getElementById('customerModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCustomerModal();
+        });
+
+        document.getElementById('jobModal').addEventListener('click', function(e) {
+            if (e.target === this) closeJobModal();
+        });
+
+        init();
+    </script>
+</body>
+</html>
