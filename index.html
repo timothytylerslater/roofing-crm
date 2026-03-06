@@ -10,6 +10,7 @@
         .container { max-width: 1400px; margin: 0 auto; }
         header { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         h1 { font-size: 28px; font-weight: 600; }
+        .sync-status { font-size: 12px; color: #34c759; margin-left: 10px; }
         .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
         .btn { background: #007aff; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 500; transition: background 0.2s; }
         .btn:hover { background: #0051d5; }
@@ -76,7 +77,6 @@
         .notes-history { margin-top: 20px; }
         .note-item { background: #f9f9f9; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
         .note-date { color: #8e8e93; font-size: 12px; margin-bottom: 4px; }
-        input[type="file"] { display: none; }
         @media (max-width: 768px) {
             h1 { font-size: 24px; }
             .modal-content { padding: 20px; }
@@ -89,13 +89,15 @@
 <body>
     <div class="container">
         <header>
-            <h1>🏠 Roofing CRM Pro</h1>
+            <div>
+                <h1>🏠 Roofing CRM Pro</h1>
+                <span class="sync-status" id="syncStatus">🔄 Connecting...</span>
+            </div>
             <div class="header-actions">
                 <button class="btn" onclick="openNewCustomerModal()">+ New Customer</button>
                 <button class="btn" onclick="openNewJobModal()">+ New Job</button>
                 <button class="btn btn-success" onclick="exportContacts()">📧 Export Contacts</button>
-                <button class="btn btn-secondary" onclick="importData()">📥 Import</button>
-                <button class="btn btn-secondary" onclick="exportBackup()">💾 Export</button>
+                <button class="btn btn-secondary" onclick="exportBackup()">💾 Export Backup</button>
             </div>
         </header>
 
@@ -280,62 +282,61 @@
         </div>
     </div>
 
-    <input type="file" id="importFile" accept=".json" onchange="handleImport(event)">
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-    <script>
-        let data = { customers: [], jobs: [], lastUpdated: null };
-        let currentTab = 'customers';
-        let currentJobFilter = 'all';
-        let editingCustomerId = null;
-        let editingJobId = null;
-        let viewingCustomerId = null;
-        let calendarDate = new Date();
+        const firebaseConfig = {
+            apiKey: "AIzaSyCREc6CQJuhxQQp9vrekVnZPC9Ny3gVVDg",
+            authDomain: "roofing-crm-766dc.firebaseapp.com",
+            projectId: "roofing-crm-766dc",
+            storageBucket: "roofing-crm-766dc.firebasestorage.app",
+            messagingSenderId: "1031122171090",
+            appId: "1:1031122171090:web:f08bbb37845dea1cac690b"
+        };
 
-        function init() {
-            loadData();
-            renderStats();
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.data = { customers: [], jobs: [] };
+        window.currentTab = 'customers';
+        window.currentJobFilter = 'all';
+        window.editingCustomerId = null;
+        window.editingJobId = null;
+        window.viewingCustomerId = null;
+        window.calendarDate = new Date();
+
+        // Real-time listeners
+        onSnapshot(collection(db, 'customers'), (snapshot) => {
+            window.data.customers = [];
+            snapshot.forEach((doc) => {
+                window.data.customers.push({ id: doc.id, ...doc.data() });
+            });
             renderCustomers();
+            renderStats();
+            updateSyncStatus('✅ Synced');
+        });
+
+        onSnapshot(collection(db, 'jobs'), (snapshot) => {
+            window.data.jobs = [];
+            snapshot.forEach((doc) => {
+                window.data.jobs.push({ id: doc.id, ...doc.data() });
+            });
             renderJobs();
+            renderStats();
+            updateSyncStatus('✅ Synced');
+        });
+
+        function updateSyncStatus(status) {
+            document.getElementById('syncStatus').textContent = status;
         }
 
-        function loadData() {
-            const stored = localStorage.getItem('roofingCRMData');
-            if (stored) {
-                data = JSON.parse(stored);
-            }
-        }
+        window.init = function() {
+            updateSyncStatus('🔄 Loading...');
+        };
 
-        function saveData() {
-            data.lastUpdated = new Date().toISOString();
-            localStorage.setItem('roofingCRMData', JSON.stringify(data));
-        }
-
-        function importData() {
-            document.getElementById('importFile').click();
-        }
-
-        function handleImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const imported = JSON.parse(e.target.result);
-                    data = imported;
-                    saveData();
-                    init();
-                    alert('✅ Data imported successfully!');
-                } catch (err) {
-                    alert('❌ Error importing data: ' + err.message);
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = '';
-        }
-
-        function switchTab(tab) {
-            currentTab = tab;
+        window.switchTab = function(tab) {
+            window.currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.content-view').forEach(v => v.classList.remove('active'));
             
@@ -353,13 +354,13 @@
             }
             
             renderStats();
-        }
+        };
 
         function renderStats() {
-            const totalCustomers = data.customers.length;
-            const totalJobs = data.jobs.length;
-            const activeJobs = data.jobs.filter(j => !['completed', 'lead'].includes(j.status)).length;
-            const revenue = data.jobs.filter(j => j.status === 'completed' && j.amount).reduce((sum, j) => sum + parseFloat(j.amount), 0);
+            const totalCustomers = window.data.customers.length;
+            const totalJobs = window.data.jobs.length;
+            const activeJobs = window.data.jobs.filter(j => !['completed', 'lead'].includes(j.status)).length;
+            const revenue = window.data.jobs.filter(j => j.status === 'completed' && j.amount).reduce((sum, j) => sum + parseFloat(j.amount), 0);
 
             document.getElementById('stats').innerHTML = `
                 <div class="stat-card"><div class="stat-value">${totalCustomers}</div><div class="stat-label">Customers</div></div>
@@ -371,7 +372,7 @@
 
         function renderCustomers() {
             const searchTerm = document.getElementById('customerSearch')?.value.toLowerCase() || '';
-            const filtered = data.customers.filter(c => 
+            const filtered = window.data.customers.filter(c => 
                 c.name.toLowerCase().includes(searchTerm) ||
                 (c.email && c.email.toLowerCase().includes(searchTerm)) ||
                 (c.phone && c.phone.includes(searchTerm))
@@ -384,7 +385,7 @@
             }
 
             tbody.innerHTML = filtered.map(customer => {
-                const customerJobs = data.jobs.filter(j => j.customerId === customer.id);
+                const customerJobs = window.data.jobs.filter(j => j.customerId === customer.id);
                 const totalValue = customerJobs.reduce((sum, j) => sum + (parseFloat(j.amount) || 0), 0);
                 
                 return `
@@ -400,60 +401,59 @@
             }).join('');
         }
 
-        function filterCustomers() { renderCustomers(); }
+        window.filterCustomers = renderCustomers;
 
-        function openNewCustomerModal() {
-            editingCustomerId = null;
+        window.openNewCustomerModal = function() {
+            window.editingCustomerId = null;
             document.getElementById('customerModalTitle').textContent = 'New Customer';
             document.getElementById('customerForm').reset();
             document.getElementById('deleteCustomerBtn').style.display = 'none';
             document.getElementById('customerModal').classList.add('active');
-        }
+        };
 
-        function closeCustomerModal() {
+        window.closeCustomerModal = function() {
             document.getElementById('customerModal').classList.remove('active');
-        }
+        };
 
-        function saveCustomer(event) {
+        window.saveCustomer = async function(event) {
             event.preventDefault();
             const customerData = {
                 name: document.getElementById('custName').value,
                 phone: document.getElementById('custPhone').value,
                 email: document.getElementById('custEmail').value,
                 address: document.getElementById('custAddress').value,
-                notes: document.getElementById('custNotes').value
+                notes: document.getElementById('custNotes').value,
+                updatedAt: new Date().toISOString()
             };
 
-            if (editingCustomerId) {
-                const idx = data.customers.findIndex(c => c.id === editingCustomerId);
-                data.customers[idx] = { ...data.customers[idx], ...customerData, updatedAt: new Date().toISOString() };
+            if (window.editingCustomerId) {
+                await setDoc(doc(db, 'customers', window.editingCustomerId), customerData);
             } else {
-                data.customers.push({ ...customerData, id: Date.now().toString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+                const id = Date.now().toString();
+                await setDoc(doc(db, 'customers', id), { ...customerData, createdAt: new Date().toISOString() });
             }
 
-            saveData();
-            renderCustomers();
-            renderStats();
             closeCustomerModal();
-        }
+        };
 
-        function deleteCustomer() {
-            if (!editingCustomerId || !confirm('Delete this customer and all their jobs?')) return;
-            data.customers = data.customers.filter(c => c.id !== editingCustomerId);
-            data.jobs = data.jobs.filter(j => j.customerId !== editingCustomerId);
-            saveData();
-            renderCustomers();
-            renderJobs();
-            renderStats();
+        window.deleteCustomer = async function() {
+            if (!window.editingCustomerId || !confirm('Delete this customer and all their jobs?')) return;
+            
+            await deleteDoc(doc(db, 'customers', window.editingCustomerId));
+            const customerJobs = window.data.jobs.filter(j => j.customerId === window.editingCustomerId);
+            for (const job of customerJobs) {
+                await deleteDoc(doc(db, 'jobs', job.id));
+            }
+            
             closeCustomerModal();
-        }
+        };
 
-        function viewCustomer(customerId) {
-            viewingCustomerId = customerId;
-            const customer = data.customers.find(c => c.id === customerId);
+        window.viewCustomer = function(customerId) {
+            window.viewingCustomerId = customerId;
+            const customer = window.data.customers.find(c => c.id === customerId);
             if (!customer) return;
 
-            const customerJobs = data.jobs.filter(j => j.customerId === customerId);
+            const customerJobs = window.data.jobs.filter(j => j.customerId === customerId);
             
             document.getElementById('customerDetailContent').innerHTML = `
                 <div class="customer-header">
@@ -489,13 +489,13 @@
 
             document.getElementById('customersView').classList.remove('active');
             document.getElementById('customerDetailView').classList.add('active');
-        }
+        };
 
-        function editCustomer(customerId) {
-            const customer = data.customers.find(c => c.id === customerId);
+        window.editCustomer = function(customerId) {
+            const customer = window.data.customers.find(c => c.id === customerId);
             if (!customer) return;
 
-            editingCustomerId = customerId;
+            window.editingCustomerId = customerId;
             document.getElementById('customerModalTitle').textContent = 'Edit Customer';
             document.getElementById('custName').value = customer.name;
             document.getElementById('custPhone').value = customer.phone || '';
@@ -504,23 +504,23 @@
             document.getElementById('custNotes').value = customer.notes || '';
             document.getElementById('deleteCustomerBtn').style.display = 'block';
             document.getElementById('customerModal').classList.add('active');
-        }
+        };
 
-        function backToCustomers() {
+        window.backToCustomers = function() {
             document.getElementById('customerDetailView').classList.remove('active');
             document.getElementById('customersView').classList.add('active');
-            viewingCustomerId = null;
-        }
+            window.viewingCustomerId = null;
+        };
 
         function renderJobs() {
             const searchTerm = document.getElementById('jobSearch')?.value.toLowerCase() || '';
-            let filtered = data.jobs.filter(job => {
-                const customer = data.customers.find(c => c.id === job.customerId);
+            let filtered = window.data.jobs.filter(job => {
+                const customer = window.data.customers.find(c => c.id === job.customerId);
                 const customerName = customer ? customer.name.toLowerCase() : '';
                 const matchesSearch = customerName.includes(searchTerm) ||
                                     (job.jobType && job.jobType.toLowerCase().includes(searchTerm)) ||
                                     (job.description && job.description.toLowerCase().includes(searchTerm));
-                const matchesFilter = currentJobFilter === 'all' || job.status === currentJobFilter;
+                const matchesFilter = window.currentJobFilter === 'all' || job.status === window.currentJobFilter;
                 return matchesSearch && matchesFilter;
             });
 
@@ -533,7 +533,7 @@
             }
 
             tbody.innerHTML = filtered.map(job => {
-                const customer = data.customers.find(c => c.id === job.customerId);
+                const customer = window.data.customers.find(c => c.id === job.customerId);
                 return `
                     <tr onclick="editJob('${job.id}')">
                         <td><strong>${customer ? customer.name : 'Unknown'}</strong></td>
@@ -541,48 +541,48 @@
                         <td><span class="status-badge status-${job.status}">${getStatusLabel(job.status)}</span></td>
                         <td>${job.amount ? '$' + parseFloat(job.amount).toLocaleString() : '-'}</td>
                         <td>${job.scheduledDate ? new Date(job.scheduledDate).toLocaleDateString() : '-'}</td>
-                        <td>${new Date(job.createdAt).toLocaleDateString()}</td>
+                        <td>${job.createdAt ? new Date(job.createdAt).toLocaleDateString() : '-'}</td>
                     </tr>
                 `;
             }).join('');
         }
 
-        function filterJobs() { renderJobs(); }
+        window.filterJobs = renderJobs;
 
-        function setJobFilter(status) {
-            currentJobFilter = status;
+        window.setJobFilter = function(status) {
+            window.currentJobFilter = status;
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.status === status);
             });
             renderJobs();
-        }
+        };
 
-        function openNewJobModal() {
-            editingJobId = null;
+        window.openNewJobModal = function() {
+            window.editingJobId = null;
             document.getElementById('jobModalTitle').textContent = 'New Job';
             document.getElementById('jobForm').reset();
             document.getElementById('deleteJobBtn').style.display = 'none';
             document.getElementById('jobNotesHistory').style.display = 'none';
             populateCustomerSelect();
             document.getElementById('jobModal').classList.add('active');
-        }
+        };
 
-        function openNewJobForCustomer(customerId) {
+        window.openNewJobForCustomer = function(customerId) {
             openNewJobModal();
             document.getElementById('jobCustomerId').value = customerId;
-        }
+        };
 
-        function closeJobModal() {
+        window.closeJobModal = function() {
             document.getElementById('jobModal').classList.remove('active');
-        }
+        };
 
         function populateCustomerSelect() {
             const select = document.getElementById('jobCustomerId');
             select.innerHTML = '<option value="">Select Customer</option>' +
-                data.customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                window.data.customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         }
 
-        function saveJob(event) {
+        window.saveJob = async function(event) {
             event.preventDefault();
             const jobData = {
                 customerId: document.getElementById('jobCustomerId').value,
@@ -590,43 +590,34 @@
                 status: document.getElementById('jobStatus').value,
                 amount: document.getElementById('jobAmount').value,
                 scheduledDate: document.getElementById('jobScheduledDate').value,
-                description: document.getElementById('jobDescription').value
+                description: document.getElementById('jobDescription').value,
+                updatedAt: new Date().toISOString()
             };
 
             const newNote = document.getElementById('jobNewNote').value.trim();
 
-            if (editingJobId) {
-                const idx = data.jobs.findIndex(j => j.id === editingJobId);
-                const existing = data.jobs[idx];
-                data.jobs[idx] = { ...existing, ...jobData, updatedAt: new Date().toISOString() };
-
+            if (window.editingJobId) {
+                const existing = window.data.jobs.find(j => j.id === window.editingJobId);
+                const notes = existing.notes || [];
                 if (newNote) {
-                    if (!data.jobs[idx].notes) data.jobs[idx].notes = [];
-                    data.jobs[idx].notes.push({ date: new Date().toISOString(), text: newNote });
+                    notes.push({ date: new Date().toISOString(), text: newNote });
                 }
+                await setDoc(doc(db, 'jobs', window.editingJobId), { ...jobData, notes });
             } else {
-                data.jobs.push({
-                    ...jobData,
-                    id: Date.now().toString(),
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                    notes: newNote ? [{ date: new Date().toISOString(), text: newNote }] : []
-                });
+                const id = Date.now().toString();
+                const notes = newNote ? [{ date: new Date().toISOString(), text: newNote }] : [];
+                await setDoc(doc(db, 'jobs', id), { ...jobData, notes, createdAt: new Date().toISOString() });
             }
 
-            saveData();
-            renderJobs();
-            renderStats();
             closeJobModal();
-            
-            if (viewingCustomerId) viewCustomer(viewingCustomerId);
-        }
+            if (window.viewingCustomerId) viewCustomer(window.viewingCustomerId);
+        };
 
-        function editJob(jobId) {
-            const job = data.jobs.find(j => j.id === jobId);
+        window.editJob = function(jobId) {
+            const job = window.data.jobs.find(j => j.id === jobId);
             if (!job) return;
 
-            editingJobId = jobId;
+            window.editingJobId = jobId;
             document.getElementById('jobModalTitle').textContent = 'Edit Job';
             populateCustomerSelect();
             document.getElementById('jobCustomerId').value = job.customerId;
@@ -651,17 +642,14 @@
 
             document.getElementById('deleteJobBtn').style.display = 'block';
             document.getElementById('jobModal').classList.add('active');
-        }
+        };
 
-        function deleteJob() {
-            if (!editingJobId || !confirm('Delete this job?')) return;
-            data.jobs = data.jobs.filter(j => j.id !== editingJobId);
-            saveData();
-            renderJobs();
-            renderStats();
+        window.deleteJob = async function() {
+            if (!window.editingJobId || !confirm('Delete this job?')) return;
+            await deleteDoc(doc(db, 'jobs', window.editingJobId));
             closeJobModal();
-            if (viewingCustomerId) viewCustomer(viewingCustomerId);
-        }
+            if (window.viewingCustomerId) viewCustomer(window.viewingCustomerId);
+        };
 
         function getStatusLabel(status) {
             const labels = {
@@ -673,8 +661,8 @@
         }
 
         function renderCalendar() {
-            const year = calendarDate.getFullYear();
-            const month = calendarDate.getMonth();
+            const year = window.calendarDate.getFullYear();
+            const month = window.calendarDate.getMonth();
             const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                               'July', 'August', 'September', 'October', 'November', 'December'];
             
@@ -705,13 +693,13 @@
                 const date = new Date(year, month, day);
                 const dateStr = date.toISOString().split('T')[0];
                 const isToday = isCurrentMonth && day === today.getDate();
-                const dayJobs = data.jobs.filter(j => j.scheduledDate === dateStr);
+                const dayJobs = window.data.jobs.filter(j => j.scheduledDate === dateStr);
                 
                 html += `<div style="min-height: 100px; padding: 8px; border: 1px solid ${isToday ? '#007aff' : '#d1d1d6'}; border-radius: 8px; background: ${isToday ? '#e3f2ff' : '#fafafa'};">
                     <div style="font-weight: 600; margin-bottom: 5px;">${day}</div>`;
                 
                 dayJobs.forEach(job => {
-                    const customer = data.customers.find(c => c.id === job.customerId);
+                    const customer = window.data.customers.find(c => c.id === job.customerId);
                     html += `<div onclick="editJob('${job.id}')" style="background: white; padding: 4px 6px; border-radius: 4px; font-size: 11px; margin-bottom: 4px; cursor: pointer; border-left: 3px solid #007aff; overflow: hidden;">${customer ? customer.name : 'Unknown'}</div>`;
                 });
                 
@@ -727,13 +715,13 @@
             grid.innerHTML = html;
         }
 
-        function changeMonth(delta) {
-            calendarDate.setMonth(calendarDate.getMonth() + delta);
+        window.changeMonth = function(delta) {
+            window.calendarDate.setMonth(window.calendarDate.getMonth() + delta);
             renderCalendar();
-        }
+        };
 
-        function exportContacts() {
-            const contacts = data.customers.map(c => ({
+        window.exportContacts = function() {
+            const contacts = window.data.customers.map(c => ({
                 name: c.name, email: c.email, phone: c.phone, address: c.address
             })).filter(c => c.email || c.phone);
 
@@ -746,17 +734,17 @@
             link.href = url;
             link.download = `customer-contacts-${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
-        }
+        };
 
-        function exportBackup() {
-            const dataStr = JSON.stringify(data, null, 2);
+        window.exportBackup = function() {
+            const dataStr = JSON.stringify({ customers: window.data.customers, jobs: window.data.jobs }, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
             link.download = `roofing-crm-backup-${new Date().toISOString().split('T')[0]}.json`;
             link.click();
-        }
+        };
 
         document.getElementById('customerModal').addEventListener('click', function(e) {
             if (e.target === this) closeCustomerModal();
